@@ -48,6 +48,10 @@ height = GetSystemMetrics(1)
 resolution = [width, height]
 
 args = sys.argv[1:]
+if "-help" in args or "-h" in args:
+    print("Arguments available:\n\n -first_start : use this argument if you start the script for the first time \n(alt: -fs)\n -gen : will generate the amount of circles specified by the user\n -p : specify a profile to use for all maps in a batch (WIP)\n -n : number of maps to generate\n -noaudio : don't generate audio after first.osu generation (if not found)")
+    input("Press enter to exit.")
+    exit()
 
 Circle_list = []
 
