@@ -48,10 +48,21 @@ height = GetSystemMetrics(1)
 resolution = [width, height]
 
 args = sys.argv[1:]
-if "-help" in args or "-h" in args:
+if "-p" in args or "-profile" in args and args[args.index("-p")+1] == "-help" or args[args.index("-p")+1] == "-h" or args[args.index("-p")+1] == "-?" or args[args.index("-profile")+1] == "-help"  or args[args.index("-profile")+1] == "-"  or args[args.index("-profile")+1] == "-?":
+    with open("settings.json") as f:
+        data = json.load(f)
+        profiles = list(data.keys())[2:]
+        print("Profiles available: ")
+        for profile in profiles:
+            print("-" + str(base64.b64decode(bytes(profile.encode("ascii"))))[2:-1])
+            input("Press enter to exit")
+            exit()
+
+if "-help" in args or "-h" in args or "-?" in args:
     print("Arguments available:\n\n -first_start : use this argument if you start the script for the first time \n(alt: -fs)\n -gen : will generate the amount of circles specified by the user\n -p : specify a profile to use for all maps in a batch (WIP)\n -n : number of maps to generate\n -noaudio : don't generate audio after first.osu generation (if not found)")
     input("Press enter to exit.")
     exit()
+
 
 Circle_list = []
 
@@ -63,9 +74,10 @@ def gen_maps(args,number=1):
             if not isfirststart():
                 with open("settings.json", "r") as f:
                     data = json.load(f)
-                if "-p" not in args:
+                if "-p" not in args or "-profile" not in args:
                     default = data["default"]
                     profile = data[default]
+
                 count = int(profile["control_point_c"])
                 cs = profile["cs"]
                 spacing = int(profile["spacing"])
