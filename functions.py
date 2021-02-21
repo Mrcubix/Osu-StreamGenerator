@@ -7,7 +7,7 @@ import circles
 import os
 import pydub
 
-def generate_original_points_coordinates(circle_size_px: int, display_res: list): # Generate original control points
+def generate_original_points_coordinates(display_res: list): # Generate original control points
     width = display_res[0]
     height = display_res[1]
     gen_points = []
@@ -21,7 +21,7 @@ def generate_original_points_coordinates(circle_size_px: int, display_res: list)
     return gen_points
 
 
-def generate_points_coordinates(count: int, spacing: int, circle_size_px: int, display_res: list, gen_points: list): # Genere more control points
+def generate_points_coordinates(count: int, spacing: int, display_res: list, gen_points: list): # Genere more control points
     width = display_res[0]
     height = display_res[1]
     for i in range(0,count-1):
@@ -35,9 +35,9 @@ def generate_points_coordinates(count: int, spacing: int, circle_size_px: int, d
     return gen_points
         
         
-def generate_original_and_p(count: int, spacing: int, circle_size_px: int, display_res: list): # Parent fonction that generate both original and other points and return them under a list
-    points = generate_original_points_coordinates(circle_size_px, display_res)
-    gen_points = generate_points_coordinates(count, spacing, circle_size_px, display_res, points)
+def generate_original_and_p(count: int, spacing: int, display_res: list): # Parent fonction that generate both original and other points and return them under a list
+    points = generate_original_points_coordinates(display_res)
+    gen_points = generate_points_coordinates(count, spacing, display_res, points)
     return gen_points
 
 #-------------- AbstractQbit functions ----------------------------#
@@ -64,7 +64,7 @@ def Draw(surface: pygame.Surface, list_points, color_code: tuple, type: str, fon
         surface.blit(font.render(str(int), True, color_code), list_points)
 
 
-def Generate_lines_and_curves(Points: list, screen: pygame.Surface, font, draw_line: bool):
+def Generate_lines_and_curves(Points: list, draw_line: bool, screen=None, font=None):
     skip = 0
     curve = []
     for i in range(0,len(Points)-2):    #  Loop throught all positions
@@ -94,14 +94,14 @@ def Generate_lines_and_curves(Points: list, screen: pygame.Surface, font, draw_l
                 Draw(screen, [Points[i], Points[i+1], Points[i+2]], (255,0,0), "bezier")
             curve.append(np.array([Bezier(np.array(Points[i]),np.array(Points[i+2]),np.array(Points[i+1]),a) for a in np.linspace(0,1,1000)]).tolist()) # Generate point on bezier curve
             skip = 1
-        if i+2 == len(Points)-1 and draw_line:    # Make sure the last point is created
+        if i+2 == len(Points)-1 and draw_line:    # Make sure the last point is Drawn
             Draw(screen, [Points[i+2][0], Points[i+2][1]], (0,255,0), "dot", font, i)
         if draw_line:
             Draw(screen, [Points[i][0], Points[i][1]], (0,255,0), "dot", font, i) # Draw all points in screen for visualisation
     return curve
 
 
-def Place_circles(screen: pygame.Surface, curve, circle_space, cs):
+def Place_circles(curve, circle_space, cs, draw=True, screen=None):
     Circle_list = []
     idx = [0,0]
     for c in reversed(range(0,len(curve))):
@@ -109,54 +109,84 @@ def Place_circles(screen: pygame.Surface, curve, circle_space, cs):
             dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
             if dist > circle_space:
                 idx = [c,p]
-                Circle_list.append(circles.circles(screen, round(curve[c][p][0]), round(curve[c][p][1]), cs))
+                Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
     return Circle_list
 
 
 def osupath_prompt():
-    osu_path = input("Insert osu folder path here: ")
-    if os.path.isfile(os.path.abspath(osu_path + '/osu!.exe')):
-        return osu_path
+    prompt = True
+    while prompt:
+        osu_path = input("Insert osu folder path here: ")
+        if os.path.isfile(os.path.abspath(osu_path + '/osu!.exe')):
+            return osu_path
 
 
 def bpm_prompt():
-    bpm = input("Choose the stream map BPM: ")
-    if bpm.isdigit():
-        return str(round(int(bpm)))
+    prompt = True
+    while prompt:
+        bpm = input("Choose the stream map BPM: ")
+        if bpm.isdigit():
+            return str(round(int(bpm)))
+
 
 def HPDrain_prompt():
-    HP_Drain = input("HP Drain: ")
-    if HP_Drain.replace('.','',1).isdigit():
-        return HP_Drain
+    prompt = True
+    while prompt:
+        HP_Drain = input("HP Drain: ")
+        if HP_Drain.replace('.','',1).isdigit():
+            return HP_Drain
+
 
 def CS_prompt(cs):
-    i = input("would you like to re-define Circle Size? Y/n : ")
-    if i == "Y" or i == "y":
-        p_cs = input("CS: ")
-        if p_cs.replace('.','',1).isdigit():
-            return str(p_cs)
-    else:
-        return str(cs)
+    prompt = True
+    while prompt:
+        if cs:
+            i = input("would you like to re-define Circle Size? Y/n : ")
+            if i == "Y" or i == "y":
+                p_cs = input("CS: ")
+                if p_cs.replace('.','',1).isdigit():
+                    return str(p_cs)
+            else:
+                return str(cs)
+        else:
+            p_cs = input("CS: ")
+            if p_cs.replace('.','',1).isdigit():
+                return str(p_cs)
+
 
 def OD_prompt():
-    od = input("Overall Difficulty: ")
-    if od.replace('.','',1).isdigit():
-        return od
+    prompt = True
+    while prompt:
+        od = input("Overall Difficulty: ")
+        if od.replace('.','',1).isdigit():
+            return od
+
 
 def AR_prompt():
-    ar = input("Approach Rate: ")
-    if ar.replace('.','',1).isdigit():
-        return ar
+    prompt = True
+    while prompt:
+        ar = input("Approach Rate: ")
+        if ar.replace('.','',1).isdigit():
+            return ar
 
 
-def Write_Map(Circle_list, cs):
+def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
     # Random Osu!StreamGenerator - 180bpm - 4 of 4
-    osu_path = osupath_prompt()
-    bpm = bpm_prompt()
-    hp = HPDrain_prompt()
-    cs = CS_prompt(cs)
-    od = OD_prompt()
-    ar = AR_prompt()
+    if not osu_path:
+        osu_path = osupath_prompt()
+    if not profile:
+        bpm = bpm_prompt()
+        hp = HPDrain_prompt()
+        cs = CS_prompt(cs)
+        od = OD_prompt()
+        ar = AR_prompt()
+    else:
+        bpm = profile["bpm"]
+        hp = profile["hp"]
+        cs = profile["cs"]
+        od = profile["od"]
+        ar = profile["ar"]
+
     timing = str(60000/int(bpm))
     os.listdir()
     if not os.path.exists(os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4")):
@@ -184,7 +214,7 @@ def Write_Map(Circle_list, cs):
             f.write(str(circle.x)+","+str(circle.y)+","+str(5000+((idx+1)*(float(timing)/4)))+",1,0,0:0:0:0:\n")
     print(".osu Generation done")
     multiplier = int(bpm)/100
-    if "audio.mp3" not in path:
+    if "audio.mp3" not in path and audio:
         track = pydub.AudioSegment.from_mp3(os.path.abspath(__file__.split("functions.py")[0]+"/assets/mp3/100bpm - 4 of 4.mp3"))
         track = track._spawn(track.raw_data, overrides={"frame_rate": int(track.frame_rate * multiplier)})
         track.export(os.path.abspath(path+"/audio.mp3"), format="mp3", bitrate="192k")

@@ -52,7 +52,7 @@ width = GetSystemMetrics(0)
 height = GetSystemMetrics(1)
 resolution = [width, height]
 Circle_list = []
-old_circle_list = []
+#old_circle_list = []
 
 #init corner
 points_count = count_prompt()
@@ -65,17 +65,17 @@ font = font_init()
 running = True
 while running:
     screen.fill((33, 33, 33))
-    if Circle_list and old_circle_list != Circle_list:
-        pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
-        print("different")
-        for circle in Circle_list:
-            circle.Draw(screen)
-    old_circle_list = Circle_list
-    if Circle_list:
-        if pygame.mouse.get_pressed()[0]:
-            if Circle_list[0].isClicked():
-                print("deleted")
-                del Circle_list[0]
+    #if Circle_list and old_circle_list != Circle_list:
+    #    pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
+    #    print("different")
+    #    for circle in Circle_list:
+    #        circle.Draw(screen)
+    #old_circle_list = Circle_list
+    #if Circle_list:
+    #    if pygame.mouse.get_pressed()[0]:
+    #        if Circle_list[0].isClicked():
+    #            print("deleted")
+    #            del Circle_list[0]
     # User input (NextAction)
     events = pygame.event.get()
     for event in events:
@@ -93,14 +93,14 @@ while running:
             if event.key == pygame.K_RETURN:
                 screen.fill((33, 33, 33))
                 pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
-                curve = Generate_lines_and_curves(generate_original_and_p(points_count, 500, 234, resolution), screen, font, draw_line)
-                Circle_list = Place_circles(screen, curve, circle_space, cs)
+                curve = Generate_lines_and_curves(generate_original_and_p(points_count, 500, resolution), draw_line, screen, font)
+                Circle_list = Place_circles(curve, circle_space, cs, screen=screen)
                 pygame.display.update()
             if event.key == pygame.K_RSHIFT:
                 screen.fill((33, 33, 33))
                 pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
-                gen_points = generate_original_and_p(points_count, 800, 234, resolution) # Generate points_counts points, spaced by at least 800 px (doesn't work), specify circle size to notappear off screen
-                curve = Generate_lines_and_curves(gen_points, screen, font, draw_line)
+                gen_points = generate_original_and_p(points_count, 500, resolution) # Generate points_counts points, spaced by at least 800 px (doesn't work), specify circle size to notappear off screen
+                curve = Generate_lines_and_curves(gen_points, draw_line, screen, font)
                 pygame.display.update()
             if event.key == pygame.K_w:
                 if Circle_list:

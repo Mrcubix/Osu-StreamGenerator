@@ -3,14 +3,15 @@ import math
 
 class circles(pygame.sprite.Sprite): # Initalise a new circle with set position and size (defined by cs)
 
-    def __init__(self,surface: pygame.Surface, x, y, cs: int):
+    def __init__(self, x, y, cs: int, draw=True, surface=None):
         self.x = x
         self.y = y
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("./assets/circle.png").convert_alpha()
-        self.size = (int(round(2.25*(109-(9*cs)))),int(round(2.25*(109-(9*cs)))))
-        self.image = pygame.transform.scale(self.image, self.size)
-        self.Draw(surface)
+        if draw:
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.image.load("./assets/circle.png").convert_alpha()
+            self.size = (int(round(2.25*(109-(9*cs)))),int(round(2.25*(109-(9*cs)))))
+            self.image = pygame.transform.scale(self.image, self.size)
+            self.Draw(surface)
 
     def transparency(self, surface: pygame.Surface):
         temp_surface = pygame.Surface(self.size, pygame.SRCALPHA)
