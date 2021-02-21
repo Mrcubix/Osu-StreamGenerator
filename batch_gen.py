@@ -105,6 +105,7 @@ def gen_maps(args,number=1):
             isfirststart()
         if "-gen" in args:
             if not isfirststart():
+                using_profile = False
                 with open("settings.json", "r") as f:
                     data = json.load(f)
                 if "-p" not in args or "-profile" not in args:
@@ -112,14 +113,19 @@ def gen_maps(args,number=1):
                     profile = data[default]
                 if "-p" in args:
                     idx = args.index("-p")
+                    using_profile = True
                 if "-profile" in args:
                     idx = args.index("-profile")
-                try:               
-                    profile = data[str(base64.b64encode(args[idx+1].encode('ascii')))[2:-1]]
-                except:
-                    print("profile name is incorrect")
-                    input("Press enter to exit")
-                    exit()
+                    using_profile = True
+                if using_profile:
+                    try:
+                        print(args[idx+1])
+                        print()
+                        profile = data[str(base64.b64encode(args[idx+1].encode('ascii')))[2:-1]]
+                    except:
+                        print("profile name is incorrect")
+                        input("Press enter to exit")
+                        exit()
                         
                 count = int(profile["control_point_c"])
                 cs = profile["cs"]
