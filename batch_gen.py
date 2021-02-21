@@ -52,18 +52,47 @@ def display_profiles():
             input("Press enter to exit")
             exit()
 
+
+def Add_profile():
+    new_profile = profile_prompt()
+    with open("settings.json", "r") as f:
+        data = json.load(f)
+    data.update(new_profile)
+    with open("settings.json", "w") as f:
+        json.dump(data, f)
+    exit()
+
+def Remove_profile(profile):
+    with open("settings.json", "r") as f:
+        data = json.load(f)
+    del data[str(base64.b64encode(profile.encode("ascii")))[2:-1]]
+    with open("settings.json", "w") as f:
+        json.dump(data, f)
+    exit()
+
 width = GetSystemMetrics(0)
 height = GetSystemMetrics(1)
 resolution = [width, height]
 
 args = sys.argv[1:]
-if "-profile" in args and (args[args.index("-profile")+1] == "-help"  or args[args.index("-profile")+1] == "-h"  or args[args.index("-profile")+1] == "-?"):
-    display_profiles()
-if "-p" in args and (args[args.index("-p")+1] == "-help" or args[args.index("-p")+1] == "-h" or args[args.index("-p")+1] == "-?"):
-    display_profiles()
+if "-profile" in args:
+    if args[args.index("-profile")+1] == "-help"  or args[args.index("-profile")+1] == "-h"  or args[args.index("-profile")+1] == "-?":
+        display_profiles()
+    if args[args.index("-profile")+1] == "-new":
+        Add_profile()
+    if args[args.index("-profile")+1] == "-remove" or args[args.index("-profile")+1] == "-r":
+        Remove_profile(args[args.index("-profile")+2])
+
+if "-p" in args:
+    if args[args.index("-p")+1] == "-help" or args[args.index("-p")+1] == "-h" or args[args.index("-p")+1] == "-?":
+        display_profiles()
+    if args[args.index("-p")+1] == "-new":
+        Add_profile()
+    if args[args.index("-p")+1] == "-remove" or args[args.index("-p")+1] == "-r":
+        Remove_profile(args[args.index("-p")+2])
 
 if "-help" in args or "-h" in args or "-?" in args:
-    print("Arguments available:\n\n -first_start : use this argument if you start the script for the first time \n(alt: -fs)\n -gen : will generate the amount of circles specified by the user\n -p : specify a profile to use for all maps in a batch (WIP)\n -n : number of maps to generate\n -noaudio : don't generate audio after first.osu generation (if not found)")
+    print("Arguments available:\n\n -first_start : use this argument if you start the script for the first time \n(alt: -fs)\n -gen : will generate the amount of circles specified by the user\n -p : specify a profile to use for all maps in a batch\n -n : number of maps to generate\n -noaudio : don't generate audio after first.osu generation (if not found)")
     input("Press enter to exit.")
     exit()
 
@@ -81,21 +110,17 @@ def gen_maps(args,number=1):
                 if "-p" not in args or "-profile" not in args:
                     default = data["default"]
                     profile = data[default]
-                else:
-                    try:
-                        try:
-                            idx = args.index("-p")
-                        except:
-                            try:
-                                idx = args.index("-profile")
-                            except:
-                                print("something wrong happened")
-                        profile = data[str(base64.b64encode(args[idx+1].encode('ascii')))[2:-1]]
-                    except:
-                        print("profile name is incorrect")
-                        input("Press enter to exit")
-                        exit()
-
+                if "-p" in args:
+                    idx = args.index("-p")
+                if "-profile" in args:
+                    idx = args.index("-profile")
+                try:               
+                    profile = data[str(base64.b64encode(args[idx+1].encode('ascii')))[2:-1]]
+                except:
+                    print("profile name is incorrect")
+                    input("Press enter to exit")
+                    exit()
+                        
                 count = int(profile["control_point_c"])
                 cs = profile["cs"]
                 spacing = int(profile["spacing"])
