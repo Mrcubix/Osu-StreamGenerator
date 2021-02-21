@@ -35,7 +35,6 @@ def isfirststart():
         profile = profile_prompt()
         settings = {"osu_path": osu_path}
         settings.update(profile)
-        print(settings)
         with open("settings.json", "w") as f:
             json.dump(settings,f)
         print("Now restart this script and you should be good to go!")
@@ -43,12 +42,7 @@ def isfirststart():
     return False
 
 
-width = GetSystemMetrics(0)
-height = GetSystemMetrics(1)
-resolution = [width, height]
-
-args = sys.argv[1:]
-if "-p" in args or "-profile" in args and args[args.index("-p")+1] == "-help" or args[args.index("-p")+1] == "-h" or args[args.index("-p")+1] == "-?" or args[args.index("-profile")+1] == "-help"  or args[args.index("-profile")+1] == "-"  or args[args.index("-profile")+1] == "-?":
+def display_profiles():
     with open("settings.json") as f:
         data = json.load(f)
         profiles = list(data.keys())[2:]
@@ -57,6 +51,16 @@ if "-p" in args or "-profile" in args and args[args.index("-p")+1] == "-help" or
             print("-" + str(base64.b64decode(bytes(profile.encode("ascii"))))[2:-1])
             input("Press enter to exit")
             exit()
+
+width = GetSystemMetrics(0)
+height = GetSystemMetrics(1)
+resolution = [width, height]
+
+args = sys.argv[1:]
+if "-profile" in args and (args[args.index("-profile")+1] == "-help"  or args[args.index("-profile")+1] == "-h"  or args[args.index("-profile")+1] == "-?"):
+    display_profiles()
+if "-p" in args and (args[args.index("-p")+1] == "-help" or args[args.index("-p")+1] == "-h" or args[args.index("-p")+1] == "-?"):
+    display_profiles()
 
 if "-help" in args or "-h" in args or "-?" in args:
     print("Arguments available:\n\n -first_start : use this argument if you start the script for the first time \n(alt: -fs)\n -gen : will generate the amount of circles specified by the user\n -p : specify a profile to use for all maps in a batch (WIP)\n -n : number of maps to generate\n -noaudio : don't generate audio after first.osu generation (if not found)")
@@ -77,6 +81,20 @@ def gen_maps(args,number=1):
                 if "-p" not in args or "-profile" not in args:
                     default = data["default"]
                     profile = data[default]
+                else:
+                    try:
+                        try:
+                            idx = args.index("-p")
+                        except:
+                            try:
+                                idx = args.index("-profile")
+                            except:
+                                print("something wrong happened")
+                        profile = data[str(base64.b64encode(args[idx+1].encode('ascii')))[2:-1]]
+                    except:
+                        print("profile name is incorrect")
+                        input("Press enter to exit")
+                        exit()
 
                 count = int(profile["control_point_c"])
                 cs = profile["cs"]
@@ -104,7 +122,7 @@ if "-n" not in args:
             number = int(number)
             prompt = False
 elif args[args.index("-n")+1].isdigit():
-    number = args[args.index("-n")+1]
+    number = int(args[args.index("-n")+1])
 else:
     print("Incorrect value for -n")
     exit()
