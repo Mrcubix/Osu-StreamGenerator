@@ -37,54 +37,6 @@ def cs_prompt():
         if cs.isdigit:
             return float(cs)
 
-
-def acceleration_prompt():
-    prompt = True
-    while prompt:
-        isenabled = input("Do you want to enable speed changes during streams? Y/n: ")
-        if isenabled == "y" or isenabled == "Y":
-            sub_prompt = True
-            while sub_prompt:
-                max_intensity_duration = input("Choose the maximum duration in curves for maximum intensity in int: ")
-                if max_intensity_duration.isdigit():
-                    max_intensity_duration = int(max_intensity_duration)
-                    sub_prompt = False
-            sub_prompt = True
-            while sub_prompt:
-                min_intensity_duration = input("Choose the maximum duration in curves for minimum intensity in int: ")
-                if min_intensity_duration.isdigit():
-                    min_intensity_duration = int(min_intensity_duration)
-                    sub_prompt = False
-            sub_prompt = True
-            while sub_prompt:
-                user_odds = input("Choose the odds of a decceleration and an acceleration to happen in int (1-100): ")
-                if user_odds.isdigit():
-                    user_odds = int(user_odds)
-                    if 0 < user_odds < 101:
-                        sub_prompt = False
-            sub_prompt = True
-            while sub_prompt:
-                spacing_0 = input("Choose the lowest spacing spacing possible, a stream can have in pixels: ")
-                print("minimum:",spacing_0)
-                if spacing_0.isdigit():
-                    spacing_0 = int(spacing_0)
-                    spacing_2 = input("Choose the highest spacing possible, a stream can have in pixels: ")
-                    print("maximum:",spacing_0)
-                    if spacing_2.isdigit():
-                        spacing_2 = int(spacing_2)
-                        if spacing_2 > spacing_0:
-                            spacing_1 = input("Choose a number between the max and the minimum, a stream can have in pixels: ")
-                            print("middle:",spacing_1)
-                            if spacing_1.isdigit():
-                                spacing_1 = int(spacing_1)
-                                if spacing_0 < spacing_1 < spacing_2:
-                                    sub_prompt = False
-        
-            return ((min_intensity_duration , max_intensity_duration, user_odds),(spacing_0,spacing_1,spacing_2))
-        else:
-            return False
-
-
 def bpm_prompt(acceleration_settings):
     if acceleration_settings:
         prompt = True
@@ -112,12 +64,14 @@ Circle_list = []
 
 #init corner
 points_count = count_prompt()
-circle_space = space_prompt()
+
 draw_line = line_prompt()
 acceleration_settings = ()
 acceleration_settings = acceleration_prompt()
 if acceleration_settings:
     circle_space = acceleration_settings[1]
+else:
+    circle_space = space_prompt()
 bpm = bpm_prompt(acceleration_settings)
 cs = cs_prompt()
 screen = screen_init(resolution)

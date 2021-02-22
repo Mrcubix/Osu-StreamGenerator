@@ -1,5 +1,5 @@
 import os
-import functions
+from functions import *
 import sys
 import json
 import base64
@@ -9,11 +9,11 @@ from win32api import GetSystemMetrics
 def profile_prompt():
     name = input("Choose the new profile's name: ")
     name = str(base64.b64encode(name.encode('ascii')))[2:-1]
-    bpm = functions.bpm_prompt()
-    hp = functions.HPDrain_prompt()
-    cs = functions.CS_prompt(None)
-    od = functions.OD_prompt()
-    ar = functions.AR_prompt()
+    bpm = bpm_prompt()
+    hp = HPDrain_prompt()
+    cs = CS_prompt(None)
+    od = OD_prompt()
+    ar = AR_prompt()
     prompt = True
     while prompt:
         control_points_c = input("Control Points Count: ")
@@ -21,15 +21,19 @@ def profile_prompt():
             prompt = False
     prompt = True
     while prompt:
+        acceleration_settings = acceleration_prompt()
+        if acceleration_settings:
+            prompt = False
+            continue
         spacing = input("Spacing between circles in px: ")
         if spacing.isdigit():
             prompt = False
-    return {"default": name, name: {"bpm": bpm,"hp": hp, "cs": cs, "od": od, "ar": ar, "control_point_c": control_points_c, "spacing": spacing}}
+    return {"default": name, name: {"bpm": bpm,"hp": hp, "cs": cs, "od": od, "ar": ar, "control_point_c": control_points_c, "spacing": (acceleration_settings[1] if acceleration_settings else spacing), "acceleration_settings": acceleration_settings[0]}}
 
 
 def isfirststart():
     if not os.path.exists(__file__.split("batch_gen.py")[0]+"settings.json"):
-        osu_path = functions.osupath_prompt()
+        osu_path = osupath_prompt()
         osu_path = str(base64.b64encode(osu_path.encode("ascii")))[2:-1]
         print("Info: As this is the first time opening this file, you're required to create a new profile for your first batch.")
         profile = profile_prompt()
@@ -43,14 +47,17 @@ def isfirststart():
 
 
 def display_profiles():
-    with open("settings.json") as f:
+    with open("settings.json", "r") as f:
         data = json.load(f)
         profiles = list(data.keys())[2:]
         print("Profiles available: ")
+        if not profiles:
+            print("No profile available, quitting...")
+            exit()
         for profile in profiles:
             print("-" + str(base64.b64decode(bytes(profile.encode("ascii"))))[2:-1])
-            input("Press enter to exit")
-            exit()
+        input("Press enter to exit")
+        exit()
 
 
 def Add_profile():
@@ -111,6 +118,7 @@ def gen_maps(args,number=1):
                 if "-p" not in args or "-profile" not in args:
                     default = data["default"]
                     profile = data[default]
+                    print("using default profile...")
                 if "-p" in args:
                     idx = args.index("-p")
                     using_profile = True
@@ -118,6 +126,7 @@ def gen_maps(args,number=1):
                     idx = args.index("-profile")
                     using_profile = True
                 if using_profile:
+                    print("attempting to use specified profile...")
                     try:
                         print(args[idx+1])
                         print()
@@ -129,16 +138,18 @@ def gen_maps(args,number=1):
                         
                 count = int(profile["control_point_c"])
                 cs = profile["cs"]
-                spacing = int(profile["spacing"])
+                spacing = (int(profile["spacing"]) if type(profile["spacing"]) == str else profile["spacing"])
+                bpm = int(profile["bpm"])
+                acceleration_settings = (profile["acceleration_settings"],spacing)
                 if "-noaudio" in args:
                     audio = False
                 else:
                     audio = True
                 osu_path = str(base64.b64decode(bytes(data["osu_path"].encode("ascii"))))[2:-1]
                 for i in range(0,number):
-                    curve = functions.Generate_lines_and_curves(functions.generate_original_and_p(count, 500, resolution), False)
-                    Circle_list = functions.Place_circles(curve, spacing, cs, draw=False)
-                    functions.Write_Map(Circle_list, profile=profile, audio=audio, osu_path=osu_path)
+                    curve = Generate_lines_and_curves(generate_original_and_p(count, 500, resolution), acceleration_settings, bpm, False)
+                    Circle_list = Place_circles(curve, acceleration_settings[1], cs, draw=False)
+                    Write_Map(Circle_list, profile=profile, audio=audio, osu_path=osu_path)
                     print(str(i+1)+"/"+str(number)+" Completed")
     else:
         print("No arguments provided")

@@ -167,8 +167,8 @@ def Place_circles(curve, circle_space, cs, draw=True, screen=None):
         curve_acceleration = curve[1][0]
         curve_intensity = curve[1][1]
         curve = curve[0]
-        print(curve_intensity)
-        print(curve_acceleration)
+        #print(curve_intensity)
+        #print(curve_acceleration)
     Circle_list = []
     idx = [0,0]
     for c in reversed(range(0,len(curve))):
@@ -182,12 +182,12 @@ def Place_circles(curve, circle_space, cs, draw=True, screen=None):
             else:
                 user_dist = circle_space[curve_intensity[c]] + curve_acceleration[c] * p
                 dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
-                print(user_dist)
+                #print(user_dist)
                 if dist > user_dist:
                     idx = [c,p]
                     Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
-                    print(curve_intensity)
-                    print(curve_acceleration)
+                    #print(curve_intensity)
+                    #print(curve_acceleration)
             
             
     return Circle_list
@@ -250,6 +250,53 @@ def AR_prompt():
             return ar
 
 
+def acceleration_prompt():
+    prompt = True
+    while prompt:
+        isenabled = input("Do you want to enable speed changes during streams? Y/n: ")
+        if isenabled == "y" or isenabled == "Y":
+            sub_prompt = True
+            while sub_prompt:
+                max_intensity_duration = input("Choose the maximum duration in curves for maximum intensity in int: ")
+                if max_intensity_duration.isdigit():
+                    max_intensity_duration = int(max_intensity_duration)
+                    sub_prompt = False
+            sub_prompt = True
+            while sub_prompt:
+                min_intensity_duration = input("Choose the maximum duration in curves for minimum intensity in int: ")
+                if min_intensity_duration.isdigit():
+                    min_intensity_duration = int(min_intensity_duration)
+                    sub_prompt = False
+            sub_prompt = True
+            while sub_prompt:
+                user_odds = input("Choose the odds of a decceleration and an acceleration to happen in int (1-100): ")
+                if user_odds.isdigit():
+                    user_odds = int(user_odds)
+                    if 0 < user_odds < 101:
+                        sub_prompt = False
+            sub_prompt = True
+            while sub_prompt:
+                spacing_0 = input("Choose the lowest spacing spacing possible, a stream can have in pixels: ")
+                print("minimum:",spacing_0)
+                if spacing_0.isdigit():
+                    spacing_0 = int(spacing_0)
+                    spacing_2 = input("Choose the highest spacing possible, a stream can have in pixels: ")
+                    print("maximum:",spacing_0)
+                    if spacing_2.isdigit():
+                        spacing_2 = int(spacing_2)
+                        if spacing_2 > spacing_0:
+                            spacing_1 = input("Choose a number between the max and the minimum, a stream can have in pixels: ")
+                            print("middle:",spacing_1)
+                            if spacing_1.isdigit():
+                                spacing_1 = int(spacing_1)
+                                if spacing_0 < spacing_1 < spacing_2:
+                                    sub_prompt = False
+        
+            return ((min_intensity_duration , max_intensity_duration, user_odds),(spacing_0,spacing_1,spacing_2))
+        else:
+            return False
+
+
 def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
     # Random Osu!StreamGenerator - 180bpm - 4 of 4
     if not osu_path:
@@ -283,7 +330,7 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
         number = str(len(list_number))
     with open(os.path.abspath(map_path+"/Osu!StreamGenerator - "+bpm+"bpm - 4 of 4 - (Osu!StreamGenerator) [Random n_"+number+"].osu"), "w") as f:
         f.write("osu file format v14\n\n")
-        f.write("[General]\nAudioFilename: audio.mp3\nAudioLeadIn: 0\nPreviewTime: -1\nCountdown: 0\nSampleSet: Normal\nSampleSet: Normal\nStackLeniency: 0.7\nMode: 0\nLetterboxInBreaks: 0\nWidescreenStoryboard: 0\n\n")
+        f.write("[General]\nAudioFilename: audio.mp3\nAudioLeadIn: 0\nPreviewTime: -1\nCountdown: 0\nSampleSet: Normal\nSampleSet: Normal\nStackLeniency: 0\nMode: 0\nLetterboxInBreaks: 0\nWidescreenStoryboard: 0\n\n")
         f.write("[Editor]\nDistanceSpacing: 1.9\nBeatDivisor: 4\nGridSize: 4\nTimelineZoom: 5.3\n\n")
         f.write("[Metadata]\nTitle:"+bpm+"bpm - 4/4\nTitleUnicode:"+bpm+"bpm - 4/4\nArtist:Osu!StreamGenerator\nArtistUnicode:Osu!StreamGenerator\nCreator:Osu!StreamGenerator\nVersion:Random n°"+number+"\nSource:Osu!StreamGenerator\nTags:Random random Osu!StreamGenerator osu!streamgenerator stream Stream "+bpm+"\nBeatmapID:0\nBeatmapSetID:-1\n\n")
         f.write("[Difficulty]\nHPDrainRate:"+hp+"\nCircleSize:"+cs+"\nOverallDifficulty:"+od+"\nApproachRate:"+ar+"\nSliderMultiplier:1.4\nSliderTickRate:1\n\n")
@@ -297,6 +344,7 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
     if "audio.mp3" not in path and audio:
         track = pydub.AudioSegment.from_mp3(os.path.abspath(__file__.split("functions.py")[0]+"/assets/mp3/100bpm - 4 of 4.mp3"))
         track = track._spawn(track.raw_data, overrides={"frame_rate": int(track.frame_rate * multiplier)})
+        track = track*2
         track.export(os.path.abspath(path+"/audio.mp3"), format="mp3", bitrate="192k")
     print("Done")
     return
