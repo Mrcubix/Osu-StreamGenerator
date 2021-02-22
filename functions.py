@@ -141,18 +141,23 @@ def generate_acceleration(curve, Acceleration_settings, bpm):
                     curve_intensity.append(1)
             else: 
                 curve_intensity.append(random.randint(0,2))
+    intensity_start_end = []
     for i in range(len(curve)):
         if i == 0:
-            a = (circle_space[curve_intensity[i]]-circle_space[random.randint(0,2)])/((60000/bpm)*len(curve[i])/1000)
+            intensity_start = random.randint(0,2)
+            a = (circle_space[curve_intensity[i]]-circle_space[intensity_start])/((60000/bpm)*len(curve[i])/1000)
             curve_acceleration.append(a)
             continue
         if i == len(curve_intensity)-1:
-            a = (circle_space[random.randint(0,2)]-circle_space[curve_intensity[-1]])/((60000/bpm)*len(curve[i])/1000)
+            intensity_end = random.randint(0,2)
+            a = (circle_space[intensity_end]-circle_space[curve_intensity[-1]])/((60000/bpm)*len(curve[i])/1000)
             curve_acceleration.append(a)
+            curve_intensity.append(intensity_end)
             continue
         else:
             a = (circle_space[curve_intensity[i+1]]-circle_space[curve_intensity[i]])/((60000/bpm)*len(curve[i])/1000)
         curve_acceleration.append(a)
+    curve_intensity.insert(0,intensity_start)
     return (curve_acceleration, curve_intensity)
 
 
@@ -162,6 +167,7 @@ def Place_circles(curve, circle_space, cs, draw=True, screen=None):
         curve_acceleration = curve[1][0]
         curve_intensity = curve[1][1]
         curve = curve[0]
+        print(curve_intensity)
         print(curve_acceleration)
     Circle_list = []
     idx = [0,0]
@@ -176,9 +182,12 @@ def Place_circles(curve, circle_space, cs, draw=True, screen=None):
             else:
                 user_dist = circle_space[curve_intensity[c]] + curve_acceleration[c] * p
                 dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
+                print(user_dist)
                 if dist > user_dist:
                     idx = [c,p]
                     Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
+                    print(curve_intensity)
+                    print(curve_acceleration)
             
             
     return Circle_list
