@@ -140,7 +140,7 @@ def gen_maps(args,number=1):
                 cs = profile["cs"]
                 spacing = (int(profile["spacing"]) if type(profile["spacing"]) == str else profile["spacing"])
                 bpm = int(profile["bpm"])
-                acceleration_settings = (profile["acceleration_settings"],spacing)
+                acceleration_settings = ((profile["acceleration_settings"],spacing) if profile["acceleration_settings"] else None)
                 if "-noaudio" in args:
                     audio = False
                 else:
@@ -148,7 +148,7 @@ def gen_maps(args,number=1):
                 osu_path = str(base64.b64decode(bytes(data["osu_path"].encode("ascii"))))[2:-1]
                 for i in range(0,number):
                     curve = Generate_lines_and_curves(generate_original_and_p(count, 500, resolution), acceleration_settings, bpm, False)
-                    Circle_list = Place_circles(curve, acceleration_settings[1], cs, draw=False)
+                    Circle_list = Place_circles(curve, (acceleration_settings[1] if acceleration_settings else spacing), cs, draw=False)
                     Write_Map(Circle_list, profile=profile, audio=audio, osu_path=osu_path)
                     print(str(i+1)+"/"+str(number)+" Completed")
     else:
