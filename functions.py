@@ -6,6 +6,7 @@ import numpy as np
 import circles
 import os
 import pydub
+import random
 
 def generate_original_points_coordinates(display_res: list): # Generate original control points
     width = display_res[0]
@@ -64,7 +65,7 @@ def Draw(surface: pygame.Surface, list_points, color_code: tuple, type: str, fon
         surface.blit(font.render(str(int), True, color_code), list_points)
 
 
-def Generate_lines_and_curves(Points: list, draw_line: bool, screen=None, font=None):
+def Generate_lines_and_curves(Points: list, is_acceleration_enabled, bpm, draw_line=False, screen=None, font=None):
     skip = 0
     curve = []
     for i in range(0,len(Points)-2):    #  Loop throught all positions
@@ -98,18 +99,88 @@ def Generate_lines_and_curves(Points: list, draw_line: bool, screen=None, font=N
             Draw(screen, [Points[i+2][0], Points[i+2][1]], (0,255,0), "dot", font, i)
         if draw_line:
             Draw(screen, [Points[i][0], Points[i][1]], (0,255,0), "dot", font, i) # Draw all points in screen for visualisation
+    if is_acceleration_enabled:
+        curve_acceleration = generate_acceleration(curve, is_acceleration_enabled, bpm)
+        return (curve, curve_acceleration)
     return curve
 
 
+def generate_acceleration(curve, Acceleration_settings, bpm):
+    user_odds = Acceleration_settings[0][2]
+    min_intensity_duration = Acceleration_settings[0][0]
+    max_intensity_duration = Acceleration_settings[0][1]
+    circle_space = Acceleration_settings[1]
+    curve_acceleration = []
+    curve_intensity = []
+    count = 0
+    for i in range(len(curve)):
+        if random.randint(1,100) < user_odds:
+            if random.randint(1,100) > 50:
+                curve_intensity.append(0)
+            else:
+                curve_intensity.append(2)
+        else:
+            if curve_intensity:
+                if curve_intensity[-1] == 0:
+                    if count >= min_intensity_duration:
+                        curve_intensity.append(1)
+                        count=0
+                        continue
+                    else:
+                        curve_intensity.append(0)
+                        count += 1
+                elif curve_intensity[-1] == 2:
+                    if count >= max_intensity_duration:
+                        curve_intensity.append(1)
+                        count=0
+                        continue
+                    else:
+                        curve_intensity.append(2)
+                        count += 1
+                else:
+                    curve_intensity.append(1)
+            else: 
+                curve_intensity.append(random.randint(0,2))
+    for i in range(len(curve)):
+        if i == 0:
+            a = (circle_space[curve_intensity[i]]-circle_space[random.randint(0,2)])/((60000/bpm)*len(curve[i])/1000)
+            curve_acceleration.append(a)
+            continue
+        if i == len(curve_intensity)-1:
+            a = (circle_space[random.randint(0,2)]-circle_space[curve_intensity[-1]])/((60000/bpm)*len(curve[i])/1000)
+            curve_acceleration.append(a)
+            continue
+        else:
+            a = (circle_space[curve_intensity[i+1]]-circle_space[curve_intensity[i]])/((60000/bpm)*len(curve[i])/1000)
+        curve_acceleration.append(a)
+    return (curve_acceleration, curve_intensity)
+
+
 def Place_circles(curve, circle_space, cs, draw=True, screen=None):
+    curve_acceleration = []
+    if type(curve) == tuple:
+        curve_acceleration = curve[1][0]
+        curve_intensity = curve[1][1]
+        curve = curve[0]
+        print(curve_acceleration)
     Circle_list = []
     idx = [0,0]
     for c in reversed(range(0,len(curve))):
         for p in reversed(range(0,len(curve[c]))):
-            dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
-            if dist > circle_space:
-                idx = [c,p]
-                Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
+            if not curve_acceleration and type(circle_space) == int:
+                user_dist = circle_space
+                dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
+                if dist > user_dist:
+                    idx = [c,p]
+                    Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
+            else:
+                user_dist = circle_space[curve_intensity[c]] + curve_acceleration[c] * p
+                dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
+                if dist > user_dist:
+                    idx = [c,p]
+                    Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
+            
+            
     return Circle_list
 
 
