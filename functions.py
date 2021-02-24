@@ -1,44 +1,32 @@
 import pygame
+from pygame import *
 from pygame import gfxdraw
-from random import randint
+import random
 import math
 import numpy as np
 import circles
 import os
 import pydub
 
-def generate_original_points_coordinates(display_res: list): # Generate original control points
-    width = display_res[0]
-    height = display_res[1]
-    gen_points = []
-    generating = True
-    while generating:
-        x = randint(0,width)
-        y = randint(0,height)
-        if y < 384 and y > 0  and x < 512 and x > 0:
-            gen_points.append([x, y])
-            generating = False
-    return gen_points
-
-
-def generate_points_coordinates(count: int, spacing: int, display_res: list, gen_points: list): # Genere more control points
-    width = display_res[0]
-    height = display_res[1]
-    for i in range(0,count-1):
+def Generate_control_points(count):
+    Control_points = []
+    for i in range(count):
         generating = True
-        while generating:
-            x = gen_points[-1][0]+randint(-spacing,spacing)
-            y = gen_points[-1][1]+randint(-spacing,spacing)
-            if y < 384 and y > 0  and x < 512 and x > 0: 
-                generating = False
-                gen_points.append([x, y])
-    return gen_points
-        
-        
-def generate_original_and_p(count: int, spacing: int, display_res: list): # Parent fonction that generate both original and other points and return them under a list
-    points = generate_original_points_coordinates(display_res)
-    gen_points = generate_points_coordinates(count, spacing, display_res, points)
-    return gen_points
+        if i == 0:
+            while generating:
+                x = random.randint(0,512)
+                y = random.randint(0,384)
+                if x >= 0 and x <= 512 and y >=0 and y <= 384:
+                    generating = False
+                    Control_points.append([x,y])
+        else:
+            while generating:
+                x = Control_points[-1][0] + random.randint(-512,512)
+                y = Control_points[-1][1] + random.randint(-384,384)
+                if x >= 0 and x <= 512 and y >=0 and y <= 384:
+                    generating = False
+                    Control_points.append([x,y])
+    return Control_points
 
 #-------------- AbstractQbit functions ----------------------------#
 
@@ -53,7 +41,6 @@ def Bezier(P1,P2,P3,alpha): # Generate bezier curve
 
 #-------------------------------------------------------------------#
 
-
 def Draw(surface: pygame.Surface, list_points, color_code: tuple, type: str, font=None, int=None):
     if type == "line":
         gfxdraw.line(surface, list_points[0], list_points[1], list_points[2], list_points[3], color_code)
@@ -63,55 +50,50 @@ def Draw(surface: pygame.Surface, list_points, color_code: tuple, type: str, fon
         gfxdraw.filled_circle(surface, list_points[0], list_points[1], 5, color_code)
         surface.blit(font.render(str(int), True, color_code), list_points)
 
-
-def Generate_lines_and_curves(Points: list, draw_line: bool, screen=None, font=None):
-    skip = 0
-    curve = []
-    for i in range(0,len(Points)-2):    #  Loop throught all positions
-
-        dist_s = math.sqrt(math.pow(Points[i+2][0]-Points[i][0],2)+math.pow(Points[i+2][1]-Points[i][1],2))
-
-        if skip:    # Skipping some iteration to avoid having 2 bezier on a cicle point
-            skip = 0
+def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 234, surface: Surface = None, DoDrawLine: bool = True, Font: bool = None):
+    skip_points = False
+    polyline = []
+    for i in range(0,len(Control_points)-2):
+        dist_b_control_points = math.sqrt((Control_points[i+2][0] - Control_points[i][0]) ** 2 + (Control_points[i+2][1] - Control_points[i][1]) ** 2)
+        if skip_points: # Skipping some iteration to avoid having 2 bezier on a cicle point
+            skip_points = False
             continue
-        if dist_s < 234/2:  # If points are too close, then create a line
+        if dist_b_control_points < dist_line_threshold: #  If points are too close, then create a line
             line = []
-            if draw_line:
-                Draw(screen, [Points[i][0], Points[i][1], Points[i+2][0], Points[i+2][1]], (0,0,255), "line")
-            skip=1
+            skip_points = True
+            list_x, list_y = np.linspace(Control_points[i][0],Control_points[i+2][0],1000), np.linspace(Control_points[i][1],Control_points[i+2][1],1000) #  Generate 1000 x coordinates / Generate 1000 y coordinates
+            line = [[round(list_x[i]),round(list_y[i])] for i in range(1000)] #  Generate a list of coordinates out of list_x and list_y
+            polyline.append(line + ["line"]) #  Add type at the end of each curve for Draw()
+        else:
+            bezier_curve = (np.array([Bezier(np.array(Control_points[i]),np.array(Control_points[i+2]),np.array(Control_points[i+1]),a) for a in np.linspace(0,1,1000)]).tolist()) # Generate 1000 points on bezier curve
+            polyline.append(bezier_curve + ["bezier"])
+            skip_points = True
+        if i+2 == len(Control_points)-1:
+            Draw(surface, [Control_points[i+2][0], Control_points[i+2][1]], (0,255,0), "dot", Font, i+2)
+        if polyline[-1][-1] == "bezier" and DoDrawLine:
+            Draw(surface,[Control_points[i], Control_points[i+1], Control_points[i+2]], (255,0,0), "bezier")
+            Draw(surface, [Control_points[i][0], Control_points[i][1]], (0,255,0), "dot", Font, i)
+            del polyline[-1][-1]
+            continue
+        elif DoDrawLine:
+            Draw(surface,[Control_points[i][0], Control_points[i][1], Control_points[i+2][0], Control_points[i+2][1]], (0,0,255), "line")
+            Draw(surface, [Control_points[i][0], Control_points[i][1]], (0,255,0), "dot", Font, i)
+            del polyline[-1][-1]
+    if not DoDrawLine:
+        for i in range(len(polyline)):
+            del polyline[i][-1]
+    return polyline
 
-            #  Generate 1000 x coordinates / Generate 1000 y coordinates
-
-            list_x, list_y = np.linspace(Points[i][0],Points[i+2][0],1000), np.linspace(Points[i][1],Points[i+2][1],1000)
-
-            #  Generate a list of coordinates out of list_x and list_y
-
-            line = [[round(list_x[i]),round(list_y[i])] for i in range(1000)]
-            curve.append(line)
-
-        else:   # Else Create a bezier curve
-            if draw_line:
-                Draw(screen, [Points[i], Points[i+1], Points[i+2]], (255,0,0), "bezier")
-            curve.append(np.array([Bezier(np.array(Points[i]),np.array(Points[i+2]),np.array(Points[i+1]),a) for a in np.linspace(0,1,1000)]).tolist()) # Generate point on bezier curve
-            skip = 1
-        if i+2 == len(Points)-1 and draw_line:    # Make sure the last point is Drawn
-            Draw(screen, [Points[i+2][0], Points[i+2][1]], (0,255,0), "dot", font, i)
-        if draw_line:
-            Draw(screen, [Points[i][0], Points[i][1]], (0,255,0), "dot", font, i) # Draw all points in screen for visualisation
-    return curve
-
-
-def Place_circles(curve, circle_space, cs, draw=True, screen=None):
+def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     Circle_list = []
     idx = [0,0]
-    for c in reversed(range(0,len(curve))):
-        for p in reversed(range(0,len(curve[c]))):
-            dist = math.sqrt(math.pow(curve[c][p][0] - curve[idx[0]][idx[1]][0],2)+math.pow(curve [c][p][1] - curve[idx[0]][idx[1]][1],2))
+    for c in reversed(range(0,len(polyline))):
+        for p in reversed(range(0,len(polyline[c]))):
+            dist = math.sqrt((polyline[c][p][0] - polyline[idx[0]][idx[1]][0]) ** 2 + (polyline [c][p][1] - polyline[idx[0]][idx[1]][1]) ** 2)
             if dist > circle_space:
                 idx = [c,p]
-                Circle_list.append(circles.circles(round(curve[c][p][0]), round(curve[c][p][1]), cs, draw, screen))
+                Circle_list.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface))
     return Circle_list
-
 
 def osupath_prompt():
     prompt = True
@@ -189,11 +171,10 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
 
     timing = str(60000/int(bpm))
     os.listdir()
-    if not os.path.exists(os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4")):
-        os.makedirs(os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4"))
-    map_path = os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4")
-    list_number = []
-    path = (os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4"))
+    path = os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    list_number = [] 
     for file in os.listdir(path):
         if "n_" in file:
             list_number.append(file.split("n_")[1].split("]")[0])
@@ -201,7 +182,7 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
         number = "0"
     else:
         number = str(len(list_number))
-    with open(os.path.abspath(map_path+"/Osu!StreamGenerator - "+bpm+"bpm - 4 of 4 - (Osu!StreamGenerator) [Random n_"+number+"].osu"), "w") as f:
+    with open(os.path.abspath(path+"/Osu!StreamGenerator - "+bpm+"bpm - 4 of 4 - (Osu!StreamGenerator) [Random n_"+number+"].osu"), "w") as f:
         f.write("osu file format v14\n\n")
         f.write("[General]\nAudioFilename: audio.mp3\nAudioLeadIn: 0\nPreviewTime: -1\nCountdown: 0\nSampleSet: Normal\nSampleSet: Normal\nStackLeniency: 0.7\nMode: 0\nLetterboxInBreaks: 0\nWidescreenStoryboard: 0\n\n")
         f.write("[Editor]\nDistanceSpacing: 1.9\nBeatDivisor: 4\nGridSize: 4\nTimelineZoom: 5.3\n\n")
@@ -220,7 +201,3 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
         track.export(os.path.abspath(path+"/audio.mp3"), format="mp3", bitrate="192k")
     print("Done")
     return
-
-
-            
-

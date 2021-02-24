@@ -1,5 +1,5 @@
 import os
-import functions
+from functions import *
 import sys
 import json
 import base64
@@ -10,11 +10,11 @@ from pygame import display
 def profile_prompt():
     name = input("Choose the new profile's name: ")
     name = str(base64.b64encode(name.encode('ascii')))[2:-1]
-    bpm = functions.bpm_prompt()
-    hp = functions.HPDrain_prompt()
-    cs = functions.CS_prompt(None)
-    od = functions.OD_prompt()
-    ar = functions.AR_prompt()
+    bpm = bpm_prompt()
+    hp = HPDrain_prompt()
+    cs = CS_prompt(None)
+    od = OD_prompt()
+    ar = AR_prompt()
     prompt = True
     while prompt:
         control_points_c = input("Control Points Count: ")
@@ -30,7 +30,7 @@ def profile_prompt():
 
 def isfirststart():
     if not os.path.exists(__file__.split("batch_gen.py")[0]+"settings.json"):
-        osu_path = functions.osupath_prompt()
+        osu_path = osupath_prompt()
         osu_path = str(base64.b64encode(osu_path.encode("ascii")))[2:-1]
         print("Info: As this is the first time opening this file, you're required to create a new profile for your first batch.")
         profile = profile_prompt()
@@ -122,8 +122,7 @@ def gen_maps(args,number=1):
                     using_profile = True
                 if using_profile:
                     try:
-                        print(args[idx+1])
-                        print()
+                        print("profile specified:",args[idx+1])
                         profile = data[str(base64.b64encode(args[idx+1].encode('ascii')))[2:-1]]
                     except:
                         print("profile name is incorrect")
@@ -131,7 +130,7 @@ def gen_maps(args,number=1):
                         exit()
                         
                 count = int(profile["control_point_c"])
-                cs = profile["cs"]
+                cs = float(profile["cs"])
                 spacing = int(profile["spacing"])
                 if "-noaudio" in args:
                     audio = False
@@ -139,9 +138,9 @@ def gen_maps(args,number=1):
                     audio = True
                 osu_path = str(base64.b64decode(bytes(data["osu_path"].encode("ascii"))))[2:-1]
                 for i in range(0,number):
-                    curve = functions.Generate_lines_and_curves(functions.generate_original_and_p(count, 500, resolution), False)
-                    Circle_list = functions.Place_circles(curve, spacing, cs, draw=False)
-                    functions.Write_Map(Circle_list, profile=profile, audio=audio, osu_path=osu_path)
+                    curve = Generate_polyline_points(Generate_control_points(count), DoDrawLine=False)
+                    Circle_list = Place_circles(curve, spacing, cs, DoDrawCircle=False)
+                    Write_Map(Circle_list, profile=profile, audio=audio, osu_path=osu_path)
                     print(str(i+1)+"/"+str(number)+" Completed")
     else:
         print("No arguments provided")

@@ -1,6 +1,7 @@
 import pygame
 from pygame import display
 from functions import *
+import test
 import sys
 
 def count_prompt():  # Prompt user about number of points
@@ -81,10 +82,10 @@ while running:
     # User input (NextAction)
     events = pygame.event.get()
     for event in events:
-        if event.type == pygame.KEYDOWN:
-            if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT:
                 running = False
                 sys.exit(0)
+        if event.type == pygame.KEYDOWN:  
             if event.key == pygame.K_ESCAPE:
                 running = False
                 sys.exit(0)
@@ -95,14 +96,15 @@ while running:
             if event.key == pygame.K_RETURN:
                 screen.fill((33, 33, 33))
                 pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
-                curve = Generate_lines_and_curves(generate_original_and_p(points_count, 500, resolution), draw_line, screen, font)
-                Circle_list = Place_circles(curve, circle_space, cs, screen=screen)
+                polyline = Generate_polyline_points(test.Generate_control_points(points_count), 117, screen, draw_line, font)
+                Circle_list = Place_circles(polyline, circle_space, cs, surface=screen)
                 pygame.display.update()
             if event.key == pygame.K_RSHIFT:
                 screen.fill((33, 33, 33))
                 pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
-                gen_points = generate_original_and_p(points_count, 500, resolution) # Generate points_counts points, spaced by at least 800 px (doesn't work), specify circle size to notappear off screen
-                curve = Generate_lines_and_curves(gen_points, draw_line, screen, font)
+                # Generate points_counts points, spaced by at least 800 px (doesn't work), specify circle size to notappear off screen
+                Control_Points = Generate_control_points(points_count)
+                polyline = Generate_polyline_points(Control_Points, 117, screen, draw_line, font)
                 pygame.display.update()
             if event.key == pygame.K_w:
                 if Circle_list:
