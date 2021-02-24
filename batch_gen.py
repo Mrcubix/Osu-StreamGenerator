@@ -3,7 +3,8 @@ import functions
 import sys
 import json
 import base64
-from win32api import GetSystemMetrics
+import pygame
+from pygame import display
 
 
 def profile_prompt():
@@ -70,8 +71,10 @@ def Remove_profile(profile):
         json.dump(data, f)
     exit()
 
-width = GetSystemMetrics(0)
-height = GetSystemMetrics(1)
+pygame.init()
+display_info = display.Info()
+width = display_info.current_w
+height = display_info.current_h
 resolution = [width, height]
 
 args = sys.argv[1:]

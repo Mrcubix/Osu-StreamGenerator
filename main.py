@@ -1,5 +1,5 @@
 import pygame
-from win32api import GetSystemMetrics
+from pygame import display
 from functions import *
 import sys
 
@@ -48,8 +48,10 @@ def font_init():    # init font
     font = pygame.font.SysFont('freesansbold.ttf', 32)
     return font
 
-width = GetSystemMetrics(0)
-height = GetSystemMetrics(1)
+pygame.init()
+display_info = display.Info()
+width = display_info.current_w
+height = display_info.current_h
 resolution = [width, height]
 Circle_list = []
 #old_circle_list = []

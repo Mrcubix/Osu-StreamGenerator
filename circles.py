@@ -1,4 +1,5 @@
 import pygame
+from pygame import display
 import math
 
 class circles(pygame.sprite.Sprite): # Initalise a new circle with set position and size (defined by cs)
@@ -6,6 +7,9 @@ class circles(pygame.sprite.Sprite): # Initalise a new circle with set position 
     def __init__(self, x, y, cs: int, draw=True, surface=None):
         self.x = x
         self.y = y
+        display_info = display.Info()
+        self.screen_ratio_x = display_info.current_w/512
+        self.screen_ratio_y = display_info.current_h/384
         if draw:
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load("./assets/circle.png").convert_alpha()
@@ -16,12 +20,12 @@ class circles(pygame.sprite.Sprite): # Initalise a new circle with set position 
     def transparency(self, surface: pygame.Surface):
         temp_surface = pygame.Surface(self.size, pygame.SRCALPHA)
         self.circle = pygame.draw.circle(temp_surface, (255, 255, 255, 100), (self.size[0]//2, self.size[1]//2), int(self.size[0]/2)-5)
-        topleft = self.x - self.size[0] // 2, self.y - self.size[1] // 2
+        topleft = (self.x*self.screen_ratio_x) - self.size[0] // 2, (self.y*self.screen_ratio_y) - self.size[1] // 2
         surface.blit(temp_surface, topleft)
 
     def Draw(self, surface: pygame.Surface):
         self.transparency(surface)
-        surface.blit(self.image,(self.x-((self.size[0])/2),self.y-((self.size[1])/2)))
+        surface.blit(self.image,((self.x*self.screen_ratio_x)-((self.size[0])/2),(self.y*self.screen_ratio_y)-((self.size[1])/2)))
         pygame.display.update()
 
     def Remove(self):
