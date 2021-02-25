@@ -8,7 +8,6 @@ A stream generator for osu!
 
     - pygame
     - pydub
-    - pywin32
     - numpy
 
 - Librairy/ies:
