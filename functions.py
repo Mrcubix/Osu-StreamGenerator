@@ -54,8 +54,9 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
     skip_points = False
     polyline = []
     for i in range(0,len(Control_points)-2):
+        #--------------------------------------- Point Creation Section --------------------------------------#
         dist_b_control_points = math.sqrt((Control_points[i+2][0] - Control_points[i][0]) ** 2 + (Control_points[i+2][1] - Control_points[i][1]) ** 2)
-        if skip_points: # Skipping some iteration to avoid having 2 bezier on a cicle point
+        if skip_points: # Skipping some iteration to avoid having 2 bezier on a single point
             skip_points = False
             continue
         if dist_b_control_points < dist_line_threshold: #  If points are too close, then create a line
@@ -66,17 +67,18 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
             polyline.append(line + ["line"]) #  Add type at the end of each curve for Draw()
         else:
             bezier_curve = (np.array([Bezier(np.array(Control_points[i]),np.array(Control_points[i+2]),np.array(Control_points[i+1]),a) for a in np.linspace(0,1,1000)]).tolist()) # Generate 1000 points on bezier curve
-            polyline.append(bezier_curve + ["bezier"])
+            polyline.append(bezier_curve + ["bezier"]) #  Add type at the end of each curve for Draw()
             skip_points = True
-        if i+2 == len(Control_points)-1:
+        #------------------------------------------- Drawing Section -------------------------------------------#
+        if i+2 == len(Control_points)-1 and DoDrawLine:
             Draw(surface, [Control_points[i+2][0], Control_points[i+2][1]], (0,255,0), "dot", Font, i+2)
         if polyline[-1][-1] == "bezier" and DoDrawLine:
-            Draw(surface,[Control_points[i], Control_points[i+1], Control_points[i+2]], (255,0,0), "bezier")
+            Draw(surface, [Control_points[i], Control_points[i+1], Control_points[i+2]], (255,0,0), "bezier")
             Draw(surface, [Control_points[i][0], Control_points[i][1]], (0,255,0), "dot", Font, i)
             del polyline[-1][-1]
             continue
-        elif DoDrawLine:
-            Draw(surface,[Control_points[i][0], Control_points[i][1], Control_points[i+2][0], Control_points[i+2][1]], (0,0,255), "line")
+        elif DoDrawLine: 
+            Draw(surface, [Control_points[i][0], Control_points[i][1], Control_points[i+2][0], Control_points[i+2][1]], (0,0,255), "line")
             Draw(surface, [Control_points[i][0], Control_points[i][1]], (0,255,0), "dot", Font, i)
             del polyline[-1][-1]
     if not DoDrawLine:
@@ -87,8 +89,8 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
 def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     Circle_list = []
     idx = [0,0]
-    for c in reversed(range(0,len(polyline))):
-        for p in reversed(range(0,len(polyline[c]))):
+    for c in reversed(range(0, len(polyline))):
+        for p in reversed(range(0, len(polyline[c]))):
             dist = math.sqrt((polyline[c][p][0] - polyline[idx[0]][idx[1]][0]) ** 2 + (polyline [c][p][1] - polyline[idx[0]][idx[1]][1]) ** 2)
             if dist > circle_space:
                 idx = [c,p]
