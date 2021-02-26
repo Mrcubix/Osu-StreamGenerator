@@ -4,6 +4,7 @@ from pygame import gfxdraw
 import random
 import math
 import numpy as np
+from pygame.draw import circle
 import circles
 import os
 import pydub
@@ -27,6 +28,7 @@ def Generate_control_points(count):
                     generating = False
                     Control_points.append([x,y])
     return Control_points
+
 
 #-------------- AbstractQbit functions ----------------------------#
 
@@ -54,6 +56,7 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
     skip_points = False
     polyline = []
     for i in range(0,len(Control_points)-2):
+
         #--------------------------------------- Point Creation Section --------------------------------------#
         dist_b_control_points = math.sqrt((Control_points[i+2][0] - Control_points[i][0]) ** 2 + (Control_points[i+2][1] - Control_points[i][1]) ** 2)
         if skip_points: # Skipping some iteration to avoid having 2 bezier on a single point
@@ -86,16 +89,134 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
             del polyline[i][-1]
     return polyline
 
+
+def ApplyAcceleration(Circle_list: list, circle_space: int, Args: list = None):
+    curve_intensity = []
+    spacings_per_curves = []
+    if not Args or Args[0] == "NewProfile":
+        prompt = True
+        while prompt:
+            max_duration_intensity = input("Choose the maximum amount of curve the change in intensity will occur for: ")
+            if max_duration_intensity.isdigit():
+                max_duration_intensity = int(max_duration_intensity)
+                prompt = False
+        prompt = True
+        while prompt:
+            intensity_change_odds = input("Choose the odds of occurence for changes in intensity (1-100): ")
+            if intensity_change_odds.isdigit():
+                intensity_change_odds = int(intensity_change_odds)
+                if 0 < intensity_change_odds <= 100:
+                    prompt = False      
+        prompt = True
+        while prompt:
+            min_intensity = input("Choose the lowest amount of spacing a circle will have: ")
+            if min_intensity.isdigit():
+                min_intensity = float(min_intensity)
+                if min_intensity < circle_space:
+                    prompt = False 
+        prompt = True
+        while prompt:
+            max_intensity = input("Choose the highest amount of spacing a circle will have: ")
+            if max_intensity.isdigit():
+                max_intensity = float(max_intensity)
+                if max_intensity > circle_space:
+                    prompt = False
+        prompt = True
+        while prompt:
+            bpm = input("Choose the map BPM, necessary to apply intensity changes: ")
+            if bpm.isdigit():
+                bpm = int(bpm)
+                prompt = False
+        if Args:
+            if Args[0] == "NewProfile":
+                return [max_duration_intensity, intensity_change_odds, min_intensity, max_intensity]
+            max_duration_intensity = 0
+            intensity_change_odds = 0
+            min_intensity = 0
+            max_intensity = 0
+            bpm = 0
+    circle_space = ([min_intensity, circle_space, max_intensity] if not Args else [Args[2][0],circle_space,Args[2][2]])
+    count = 0
+    for idx, i in enumerate(Circle_list):
+        if idx == len(Circle_list) - 1:
+            if random.randint(0,100) < intensity_change_odds:
+                if random.randint(0,100) > 50:
+                    curve_intensity.append(2)
+                else:
+                    curve_intensity.append(0)
+            else:
+                 curve_intensity.append(1)
+        if random.randint(0,100) < intensity_change_odds:
+                if random.randint(0,100) > 50:
+                    curve_intensity.append(2)
+                    count += 1
+                else:
+                    curve_intensity.append(0)
+                    count += 1
+        else:
+            if curve_intensity:
+                if curve_intensity[-1] == 2 and not count+1 > max_duration_intensity:
+                    curve_intensity.append(2)
+                    count += 1
+                    continue
+                elif curve_intensity[-1] == 0 and not count+1 > max_duration_intensity:
+                    curve_intensity.append(0)
+                    count += 1
+                    continue
+                elif count+1 > 2:
+                    curve_intensity.append(1)
+                    count = 0
+                    continue
+                else:
+                    curve_intensity.append(1)   
+            else:
+                curve_intensity.append(1)
+    for i in range(len(curve_intensity)-1):
+        if i+2 == len(curve_intensity):
+            spacings_for_curve = np.linspace(circle_space[curve_intensity[i]],circle_space[curve_intensity[i+1]], len(Circle_list[i])).tolist()
+            spacings_per_curves.append(spacings_for_curve)
+            #print(spacings_for_curve)
+            continue
+        spacings_for_curve = np.linspace(circle_space[curve_intensity[i]],circle_space[curve_intensity[i+1]], len(Circle_list[i])).tolist()
+        #print(spacings_for_curve)
+        spacings_per_curves.append(spacings_for_curve)
+    if curve_intensity.count(curve_intensity[0]) == len(curve_intensity):
+        print("Intensity didn't change")
+        return Circle_list
+    print(curve_intensity)
+    return spacings_per_curves
+
 def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     Circle_list = []
+    curve = []
     idx = [0,0]
+    next_circle_space = None
     for c in reversed(range(0, len(polyline))):
+        if type(circle_space) == list:
+            iter_circle_space = iter(circle_space[c])
+            next_circle_space = next(iter_circle_space)
+            #print(circle_space[c])
         for p in reversed(range(0, len(polyline[c]))):
             dist = math.sqrt((polyline[c][p][0] - polyline[idx[0]][idx[1]][0]) ** 2 + (polyline [c][p][1] - polyline[idx[0]][idx[1]][1]) ** 2)
-            if dist > circle_space:
+            if dist > (circle_space if type(circle_space) == int else next_circle_space):
                 idx = [c,p]
-                Circle_list.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface))
+                curve.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface))
+                if type(circle_space) == list:
+                    next_circle_space = next(iter_circle_space)
+        Circle_list.append(curve)
     return Circle_list
+
+def Acceleration_Prompt(Circle_list, circle_space):
+    prompt = True
+    while prompt:
+        isAccelerationEnabled = input("Would you like to enable acceleration in streams? Y/n: ")
+        if isAccelerationEnabled.isalpha():
+            if (isAccelerationEnabled == "Y" or isAccelerationEnabled == "y"):
+                Circle_list = ApplyAcceleration(Circle_list, circle_space)
+                return Circle_list
+            else:
+                return Circle_list
+
 
 def osupath_prompt():
     prompt = True

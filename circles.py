@@ -28,6 +28,8 @@ class circles(pygame.sprite.Sprite): # Initalise a new circle with set position 
         surface.blit(self.image,((self.x*self.screen_ratio_x)-((self.size[0])/2),(self.y*self.screen_ratio_y)-((self.size[1])/2)))
         pygame.display.update()
 
+    def GetPos(self):
+        return [self.x, self.y]
     def Remove(self):
         del self
 

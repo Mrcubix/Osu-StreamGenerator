@@ -98,6 +98,19 @@ while running:
                 pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
                 polyline = Generate_polyline_points(test.Generate_control_points(points_count), 117, screen, draw_line, font)
                 Circle_list = Place_circles(polyline, circle_space, cs, surface=screen)
+                spacings_per_curves = Acceleration_Prompt(Circle_list, circle_space)
+                if spacings_per_curves != Circle_list:
+                    screen.fill((33, 33, 33))
+                    old_Circle_list = Circle_list
+                    Circle_list = Place_circles(polyline, spacings_per_curves, cs, surface=screen)
+                    Circle_dict = {}
+                    for idx, i in enumerate([old_Circle_list, Circle_list]):
+                        Circle_dict.update({"List"+str(idx): []})
+                        for curves in i:
+                            for circles in curves:
+                                Circle_dict["List"+str(idx)].append(circles.GetPos())
+                    if Circle_dict["List0"] == Circle_dict["List1"]:
+                        print("same")
                 pygame.display.update()
             if event.key == pygame.K_RSHIFT:
                 screen.fill((33, 33, 33))
