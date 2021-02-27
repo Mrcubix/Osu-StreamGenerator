@@ -1,7 +1,6 @@
 import pygame
 from pygame import display
 from functions import *
-import test
 import sys
 
 def count_prompt():  # Prompt user about number of points
@@ -55,6 +54,7 @@ width = display_info.current_w
 height = display_info.current_h
 resolution = [width, height]
 Circle_list = []
+Final_Circle_List = []
 #old_circle_list = []
 
 #init corner
@@ -96,21 +96,21 @@ while running:
             if event.key == pygame.K_RETURN:
                 screen.fill((33, 33, 33))
                 pygame.draw.rect(screen, (22, 22, 22), (0,0,512,384))
-                polyline = Generate_polyline_points(test.Generate_control_points(points_count), 117, screen, draw_line, font)
+                polyline = Generate_polyline_points(Generate_control_points(points_count), 117, screen, draw_line, font)
                 Circle_list = Place_circles(polyline, circle_space, cs, surface=screen)
+                pygame.display.update()
                 spacings_per_curves = Acceleration_Prompt(Circle_list, circle_space)
                 if spacings_per_curves != Circle_list:
-                    screen.fill((33, 33, 33))
-                    old_Circle_list = Circle_list
                     Circle_list = Place_circles(polyline, spacings_per_curves, cs, surface=screen)
-                    Circle_dict = {}
-                    for idx, i in enumerate([old_Circle_list, Circle_list]):
-                        Circle_dict.update({"List"+str(idx): []})
-                        for curves in i:
-                            for circles in curves:
-                                Circle_dict["List"+str(idx)].append(circles.GetPos())
-                    if Circle_dict["List0"] == Circle_dict["List1"]:
-                        print("same")
+                    Final_Circle_List = []
+                    for curve in Circle_list:
+                        for circles in curve:
+                            Final_Circle_List.append(circles)
+                    screen.fill((33, 33, 33))
+                    test = [Circle.GetPos() for Circle in Final_Circle_List]
+                    print(test)
+                else:
+                    Final_Circle_List = Circle_list
                 pygame.display.update()
             if event.key == pygame.K_RSHIFT:
                 screen.fill((33, 33, 33))
@@ -120,7 +120,7 @@ while running:
                 polyline = Generate_polyline_points(Control_Points, 117, screen, draw_line, font)
                 pygame.display.update()
             if event.key == pygame.K_w:
-                if Circle_list:
+                if Final_Circle_List:
                     print("Writing Map...")
-                    Write_Map(Circle_list, cs)
+                    Write_Map(Final_Circle_List, cs)
     

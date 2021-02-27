@@ -171,14 +171,13 @@ def ApplyAcceleration(Circle_list: list, circle_space: int, Args: list = None):
                     curve_intensity.append(1)   
             else:
                 curve_intensity.append(1)
+    curve_intensity.reverse()
     for i in range(len(curve_intensity)-1):
         if i+2 == len(curve_intensity):
             spacings_for_curve = np.linspace(circle_space[curve_intensity[i]],circle_space[curve_intensity[i+1]], len(Circle_list[i])).tolist()
-            spacings_per_curves.append(spacings_for_curve)
-            #print(spacings_for_curve)
+            spacings_per_curves.append(spacings_for_curve[::-1])
             continue
         spacings_for_curve = np.linspace(circle_space[curve_intensity[i]],circle_space[curve_intensity[i+1]], len(Circle_list[i])).tolist()
-        #print(spacings_for_curve)
         spacings_per_curves.append(spacings_for_curve)
     if curve_intensity.count(curve_intensity[0]) == len(curve_intensity):
         print("Intensity didn't change")
@@ -195,7 +194,7 @@ def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
         if type(circle_space) == list:
             iter_circle_space = iter(circle_space[c])
             next_circle_space = next(iter_circle_space)
-            #print(circle_space[c])
+            print(circle_space[c])
         for p in reversed(range(0, len(polyline[c]))):
             dist = math.sqrt((polyline[c][p][0] - polyline[idx[0]][idx[1]][0]) ** 2 + (polyline [c][p][1] - polyline[idx[0]][idx[1]][1]) ** 2)
             if dist > (circle_space if type(circle_space) == int else next_circle_space):
