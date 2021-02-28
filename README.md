@@ -26,3 +26,5 @@ or main.py (only 1 map) (Slow)
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/HU6uPdEHeY8/0.jpg)](https://www.youtube.com/watch?v=HU6uPdEHeY8)
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/l7w8kTjzV5g/0.jpg)](https://youtu.be/l7w8kTjzV5g)
+Acceleration feature showcase:
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/GsiC-wTCl_s/0.jpg)](https://www.youtube.com/watch?v=GsiC-wTCl_s)
