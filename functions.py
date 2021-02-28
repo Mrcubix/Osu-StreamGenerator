@@ -219,9 +219,7 @@ def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     for c in reversed(range(0, len(polyline))):
         curve = []
         if type(circle_space) == list:
-            print(circle_space[c])
             iter_circle_space = iter(circle_space[c])
-            print(circle_space[c][-1])
             next_circle_space = next(iter_circle_space, circle_space[c][-1])     
         for p in reversed(range(len(polyline[c])-1)):
             dist += math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2)
