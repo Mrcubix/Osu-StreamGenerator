@@ -177,8 +177,6 @@ def generate_intensity(Circle_list: list = None, circle_space: int = None, Args:
 
 def acceleration_algorithm(polyline, circle_space, curve_intensity):
     new_circle_spacing = []
-    lengthleft_list = []
-    length_list = []
     for idx in range(len(polyline)): #repeat 4 times
         spacing = []
         Length = 0
@@ -194,11 +192,11 @@ def acceleration_algorithm(polyline, circle_space, curve_intensity):
                 length_left -= dist 
             if length_left > 0: 
                 best_spacing = s
-                best_length_left = length_left
             else: # Since length < 0, use previous working index (best_spacing), could also jsut do `s-1`
+                if spacing[best_spacing] == []:
+                    new_circle_spacing.append([circle_space[1]])
+                    continue
                 new_circle_spacing.append(spacing[best_spacing])
-                lengthleft_list.append(best_length_left)
-                length_list.append(Length)
                 break
     return new_circle_spacing # still only obtain stuff such as [[20.0], [30.0, 20.0], [20.0, 20.0, 20.0], [20.0, 20.0, 20.0, 20.0]]
 
@@ -221,7 +219,9 @@ def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     for c in reversed(range(0, len(polyline))):
         curve = []
         if type(circle_space) == list:
+            print(circle_space[c])
             iter_circle_space = iter(circle_space[c])
+            print(circle_space[c][-1])
             next_circle_space = next(iter_circle_space, circle_space[c][-1])     
         for p in reversed(range(len(polyline[c])-1)):
             dist += math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2)
