@@ -4,6 +4,7 @@ from pygame import gfxdraw
 import random
 import math
 import numpy as np
+from pygame.draw import circle
 import circles
 import os
 import pydub
@@ -27,6 +28,7 @@ def Generate_control_points(count):
                     generating = False
                     Control_points.append([x,y])
     return Control_points
+
 
 #-------------- AbstractQbit functions ----------------------------#
 
@@ -54,6 +56,7 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
     skip_points = False
     polyline = []
     for i in range(0,len(Control_points)-2):
+
         #--------------------------------------- Point Creation Section --------------------------------------#
         dist_b_control_points = math.sqrt((Control_points[i+2][0] - Control_points[i][0]) ** 2 + (Control_points[i+2][1] - Control_points[i][1]) ** 2)
         if skip_points: # Skipping some iteration to avoid having 2 bezier on a single point
@@ -86,16 +89,166 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
             del polyline[i][-1]
     return polyline
 
+
+def generate_intensity(Circle_list: list = None, circle_space: int = None, Args: list = None):
+    curve_intensity = []
+    if not Args or Args[0] == "NewProfile":
+        prompt = True
+        while prompt:
+            max_duration_intensity = input("Choose the maximum amount of curve the change in intensity will occur for: ")
+            if max_duration_intensity.isdigit():
+                max_duration_intensity = int(max_duration_intensity)
+                prompt = False
+        prompt = True
+        while prompt:
+            intensity_change_odds = input("Choose the odds of occurence for changes in intensity (1-100): ")
+            if intensity_change_odds.isdigit():
+                intensity_change_odds = int(intensity_change_odds)
+                if 0 < intensity_change_odds <= 100:
+                    prompt = False      
+        prompt = True
+        while prompt:
+            min_intensity = input("Choose the lowest amount of spacing a circle will have: ")
+            if min_intensity.isdigit():
+                min_intensity = float(min_intensity)
+                if min_intensity < circle_space:
+                    prompt = False 
+        prompt = True
+        while prompt:
+            max_intensity = input("Choose the highest amount of spacing a circle will have: ")
+            if max_intensity.isdigit():
+                max_intensity = float(max_intensity)
+                if max_intensity > circle_space:
+                    prompt = False
+        prompt = True
+        if Args:
+            if Args[0] == "NewProfile":
+                return [max_duration_intensity, intensity_change_odds,  min_intensity, max_intensity]
+    elif Args[0] == "GenMap":
+        max_duration_intensity = Args[1]  
+        intensity_change_odds = Args[2]
+        min_intensity = Args[3]
+        max_intensity = Args[4]
+    circle_space = ([min_intensity, circle_space, max_intensity] if not Args else [Args[0][3],circle_space,Args[0][4]])
+    count = 0
+    for idx, i in enumerate(Circle_list):
+        if idx == len(Circle_list) - 1:
+            if random.randint(0,100) < intensity_change_odds:
+                if random.randint(0,100) > 50:
+                    curve_intensity.append(2)
+                else:
+                    curve_intensity.append(0)
+            else:
+                 curve_intensity.append(1)
+        if random.randint(0,100) < intensity_change_odds:
+                if random.randint(0,100) > 50:
+                    curve_intensity.append(2)
+                    count += 1
+                else:
+                    curve_intensity.append(0)
+                    count += 1
+        else:
+            if curve_intensity:
+                if curve_intensity[-1] == 2 and not count+1 > max_duration_intensity:
+                    curve_intensity.append(2)
+                    count += 1
+                    continue
+                elif curve_intensity[-1] == 0 and not count+1 > max_duration_intensity:
+                    curve_intensity.append(0)
+                    count += 1
+                    continue
+                elif count+1 > 2:
+                    curve_intensity.append(1)
+                    count = 0
+                    continue
+                else:
+                    curve_intensity.append(1)   
+            else:
+                curve_intensity.append(1)
+    curve_intensity.reverse()
+    if curve_intensity.count(curve_intensity[0]) == len(curve_intensity):
+        print("Intensity didn't change")
+        return circle_space[1]
+    print("\n")
+    #print(curve_intensity)
+    #print("\n")
+    return [circle_space, curve_intensity]
+
+
+def acceleration_algorithm(polyline, circle_space, curve_intensity):
+    new_circle_spacing = []
+    lengthleft_list = []
+    length_list = []
+    for idx in range(len(polyline)): #repeat 4 times
+        spacing = []
+        Length = 0
+        best_spacing = 0
+        for p_idx in range(len(polyline[idx])-1): #repeat 1000 times / p_idx in [0 ; 1000]
+            # Create multiple list containing spacing going from circle_space[curve_intensity[idx-1]] to circle_space[curve_intensity[idx]]
+            spacing.append(np.linspace(circle_space[curve_intensity[idx]],circle_space[curve_intensity[idx+1]], p_idx).tolist())
+            # Sum distance to find length of curve
+            Length += abs(math.sqrt((polyline[idx][p_idx+1][0] - polyline[idx][p_idx][0]) ** 2 + (polyline [idx][p_idx+1][1] - polyline[idx][p_idx][1]) ** 2))
+        for s in range(len(spacing)): # probably has 1000 list in 1 list
+            length_left = Length # Make sure to reset length for each iteration
+            for dist in spacing[s]: # substract the specified int in spacing[s]
+                length_left -= dist 
+            if length_left > 0: 
+                best_spacing = s
+                best_length_left = length_left
+            else: # Since length < 0, use previous working index (best_spacing), could also jsut do `s-1`
+                new_circle_spacing.append(spacing[best_spacing])
+                lengthleft_list.append(best_length_left)
+                length_list.append(Length)
+                break
+    return new_circle_spacing # still only obtain stuff such as [[20.0], [30.0, 20.0], [20.0, 20.0, 20.0], [20.0, 20.0, 20.0, 20.0]]
+
+
+def sum_dist(polyline):
+    length_list = []
+    for c in range(len(polyline)):
+        length = 0
+        for p in range(len(polyline[c])-1):
+            length += abs(math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2))
+        length_list.append(length)
+    return length_list
+
+
 def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     Circle_list = []
-    idx = [0,0]
+    curve = []
+    next_circle_space = None
+    dist = 0
     for c in reversed(range(0, len(polyline))):
-        for p in reversed(range(0, len(polyline[c]))):
-            dist = math.sqrt((polyline[c][p][0] - polyline[idx[0]][idx[1]][0]) ** 2 + (polyline [c][p][1] - polyline[idx[0]][idx[1]][1]) ** 2)
-            if dist > circle_space:
-                idx = [c,p]
-                Circle_list.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface))
+        curve = []
+        if type(circle_space) == list:
+            iter_circle_space = iter(circle_space[c])
+            next_circle_space = next(iter_circle_space, circle_space[c][-1])     
+        for p in reversed(range(len(polyline[c])-1)):
+            dist += math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2)
+            if dist > (circle_space if type(circle_space) == int else next_circle_space):
+                dist = 0
+                curve.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface))
+                if type(circle_space) == list:
+                    next_circle_space = next(iter_circle_space, circle_space[c][-1])
+        Circle_list.append(curve)
     return Circle_list
+
+
+def Acceleration_Prompt(Circle_list, circle_space, polyline):
+    prompt = True
+    while prompt:
+        isAccelerationEnabled = input("Would you like to enable acceleration in streams? Y/n: ")
+        if isAccelerationEnabled.isalpha():
+            if (isAccelerationEnabled == "Y" or isAccelerationEnabled == "y"):
+                intensity = generate_intensity(Circle_list, circle_space)
+                if intensity != circle_space:
+                    circle_spacings = acceleration_algorithm(polyline, intensity[0], intensity[1])
+                    return circle_spacings
+                else:
+                    return Circle_list
+            else:
+                return Circle_list
+
 
 def osupath_prompt():
     prompt = True
@@ -170,8 +323,10 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
         cs = profile["cs"]
         od = profile["od"]
         ar = profile["ar"]
-
     timing = str(60000/int(bpm))
+    Converted_circle_list = []     
+    [[Converted_circle_list.append(circles) for circles in curve] for curve in Circle_list]
+    Converted_circle_list.reverse()
     os.listdir()
     path = os.path.abspath(osu_path+"/Songs"+"/Random Osu!StreamGenerator - "+bpm+"bpm - 4 of 4")
     if not os.path.exists(path):
@@ -179,11 +334,13 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
     list_number = [] 
     for file in os.listdir(path):
         if "n_" in file:
-            list_number.append(file.split("n_")[1].split("]")[0])
+            list_number.append(int(file.split("n_")[1].split("]")[0]))
+            list_number.sort()
     if not list_number:
         number = "0"
     else:
-        number = str(len(list_number))
+        
+        number = str(max(list_number)+1)
     with open(os.path.abspath(path+"/Osu!StreamGenerator - "+bpm+"bpm - 4 of 4 - (Osu!StreamGenerator) [Random n_"+number+"].osu"), "w") as f:
         f.write("osu file format v14\n\n")
         f.write("[General]\nAudioFilename: audio.mp3\nAudioLeadIn: 0\nPreviewTime: -1\nCountdown: 0\nSampleSet: Normal\nSampleSet: Normal\nStackLeniency: 0.7\nMode: 0\nLetterboxInBreaks: 0\nWidescreenStoryboard: 0\n\n")
@@ -193,7 +350,7 @@ def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
         f.write("[Events]\n//Background and Video events\n//Break Periods\n//Storyboard Layer 0 (Background)\n//Storyboard Layer 1 (Fail)\n//Storyboard Layer 2 (Pass)\n//Storyboard Layer 3 (Foreground)\n//Storyboard Layer 4 (Overlay)\n//Storyboard Sound Samples\n\n")
         f.write("[TimingPoints]\n0,"+timing+",4,1,0,100,1,0\n\n")
         f.write("[HitObjects]\n")
-        for idx, circle in enumerate(Circle_list):
+        for idx, circle in enumerate(Converted_circle_list):
             f.write(str(circle.x)+","+str(circle.y)+","+str(5000+((idx+1)*(float(timing)/4)))+",1,0,0:0:0:0:\n")
     print(".osu Generation done")
     multiplier = int(bpm)/100

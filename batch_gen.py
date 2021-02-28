@@ -25,7 +25,23 @@ def profile_prompt():
         spacing = input("Spacing between circles in px: ")
         if spacing.isdigit():
             prompt = False
-    return {"default": name, name: {"bpm": bpm,"hp": hp, "cs": cs, "od": od, "ar": ar, "control_point_c": control_points_c, "spacing": spacing}}
+    prompt = True
+    while prompt:
+        a = input("Do you want to generate speed changes in streams? Y/n: ")
+        if a == "Y" or a == "y":
+            intensity = generate_intensity(circle_space = int(spacing), Args = ["NewProfile"])
+            max_duration_intensity = intensity[0]
+            intensity_change_odds = intensity[1]
+            min_intensity = intensity[2]
+            max_intensity = intensity[3]
+            prompt = False
+        if a == "N" or a == "n":
+            max_duration_intensity = None
+            intensity_change_odds = None
+            min_intensity = None
+            max_intensity = None
+            prompt = False
+    return {"default": name, name: {"bpm": bpm,"hp": hp, "cs": cs, "od": od, "ar": ar, "control_point_c": control_points_c, "spacing": spacing, "duration": max_duration_intensity, "odds": intensity_change_odds, "min_intensity": min_intensity, "max_intensity": max_intensity}}
 
 
 def isfirststart():
@@ -128,18 +144,29 @@ def gen_maps(args,number=1):
                         print("profile name is incorrect")
                         input("Press enter to exit")
                         exit()
-                        
+                max_duration_intensity : None    
                 count = int(profile["control_point_c"])
                 cs = float(profile["cs"])
                 spacing = int(profile["spacing"])
+                if "duration" in profile:
+                    if profile["duration"]:
+                        max_duration_intensity = profile["duration"]
+                        intensity_change_odds = profile["odds"]
+                        min_intensity = profile["min_intensity"]
+                        max_intensity = profile["max_intensity"]
                 if "-noaudio" in args:
                     audio = False
                 else:
                     audio = True
                 osu_path = str(base64.b64decode(bytes(data["osu_path"].encode("ascii"))))[2:-1]
                 for i in range(0,number):
-                    curve = Generate_polyline_points(Generate_control_points(count), DoDrawLine=False)
-                    Circle_list = Place_circles(curve, spacing, cs, DoDrawCircle=False)
+                    polyline = Generate_polyline_points(Generate_control_points(count), DoDrawLine=False)
+                    Circle_list = Place_circles(polyline, spacing, cs, DoDrawCircle=False)
+                    if max_duration_intensity:
+                        intensity = generate_intensity(Circle_list, spacing, ["GenMap", max_duration_intensity, intensity_change_odds, min_intensity, max_intensity])
+                        if intensity != Circle_list:
+                            circle_spacings = acceleration_algorithm(polyline, [min_intensity, spacing, max_intensity], intensity[1])
+                            Circle_list = Place_circles(polyline, circle_spacings, cs, DoDrawCircle=False)
                     Write_Map(Circle_list, profile=profile, audio=audio, osu_path=osu_path)
                     print(str(i+1)+"/"+str(number)+" Completed")
     else:
