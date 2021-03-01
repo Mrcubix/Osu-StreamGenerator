@@ -116,6 +116,12 @@ if "-help" in args or "-h" in args or "-?" in args:
     exit()
 
 
+#-----------------------------------------------------------------------------#
+#  Potential cleanup neccesary for this function:                             #
+#                                                                             #
+#  - Make it more organised                                                   #                       
+#                                                                             #
+#-----------------------------------------------------------------------------#
 Circle_list = []
 
 def gen_maps(args,number=1):
@@ -172,6 +178,13 @@ def gen_maps(args,number=1):
     else:
         print("No arguments provided")
 
+
+#-----------------------------------------------------------------------------#
+#  Potential cleanup neccesary for this Section :                             #
+#                                                                             #
+#  - Rewrite this section and make it more organised                          #                      
+#                                                                             #
+#-----------------------------------------------------------------------------#
 if not args:
     args.append("-gen")
 prompt = True

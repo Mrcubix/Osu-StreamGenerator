@@ -90,6 +90,12 @@ def Generate_polyline_points(Control_points: list, dist_line_threshold: int  = 2
     return polyline
 
 
+#-----------------------------------------------------------------------------#
+#  Potential cleanup neccesary for this function:                             #
+#                                                                             #
+#  - Rewrite entire function?                                                 #                     
+#                                                                             #
+#-----------------------------------------------------------------------------#
 def generate_intensity(Circle_list: list = None, circle_space: int = None, Args: list = None):
     curve_intensity = []
     if not Args or Args[0] == "NewProfile":
@@ -170,8 +176,6 @@ def generate_intensity(Circle_list: list = None, circle_space: int = None, Args:
         print("Intensity didn't change")
         return circle_space[1]
     print("\n")
-    #print(curve_intensity)
-    #print("\n")
     return [circle_space, curve_intensity]
 
 
@@ -182,10 +186,8 @@ def acceleration_algorithm(polyline, circle_space, curve_intensity):
         Length = 0
         best_spacing = 0
         for p_idx in range(len(polyline[idx])-1): #repeat 1000 times / p_idx in [0 ; 1000]
-            # Create multiple list containing spacing going from circle_space[curve_intensity[idx-1]] to circle_space[curve_intensity[idx]]
-            spacing.append(np.linspace(circle_space[curve_intensity[idx]],circle_space[curve_intensity[idx+1]], p_idx).tolist())
-            # Sum distance to find length of curve
-            Length += abs(math.sqrt((polyline[idx][p_idx+1][0] - polyline[idx][p_idx][0]) ** 2 + (polyline [idx][p_idx+1][1] - polyline[idx][p_idx][1]) ** 2))
+            spacing.append(np.linspace(circle_space[curve_intensity[idx]],circle_space[curve_intensity[idx+1]], p_idx).tolist()) #  Create multiple list containing spacing going from circle_space[curve_intensity[idx-1]] to circle_space[curve_intensity[idx]]
+            Length += abs(math.sqrt((polyline[idx][p_idx+1][0] - polyline[idx][p_idx][0]) ** 2 + (polyline [idx][p_idx+1][1] - polyline[idx][p_idx][1]) ** 2)) #  Sum distance to find length of curve
         for s in range(len(spacing)): # probably has 1000 list in 1 list
             length_left = Length # Make sure to reset length for each iteration
             for dist in spacing[s]: # substract the specified int in spacing[s]
@@ -201,16 +203,13 @@ def acceleration_algorithm(polyline, circle_space, curve_intensity):
     return new_circle_spacing # still only obtain stuff such as [[20.0], [30.0, 20.0], [20.0, 20.0, 20.0], [20.0, 20.0, 20.0, 20.0]]
 
 
-def sum_dist(polyline):
-    length_list = []
-    for c in range(len(polyline)):
-        length = 0
-        for p in range(len(polyline[c])-1):
-            length += abs(math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2))
-        length_list.append(length)
-    return length_list
-
-
+#-----------------------------------------------------------------------------#
+#  Potential cleanup neccesary for this function:                             #
+#                                                                             #
+#  - use a single list instead of separating circle in their own curve?       #
+#  - would require an index for each curve?                                   #                        
+#                                                                             #
+#-----------------------------------------------------------------------------#
 def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
     Circle_list = []
     curve = []
@@ -222,13 +221,13 @@ def Place_circles(polyline, circle_space, cs, DoDrawCircle=True, surface=None):
             iter_circle_space = iter(circle_space[c])
             next_circle_space = next(iter_circle_space, circle_space[c][-1])     
         for p in reversed(range(len(polyline[c])-1)):
-            dist += math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2)
-            if dist > (circle_space if type(circle_space) == int else next_circle_space):
+            dist += math.sqrt((polyline[c][p+1][0] - polyline[c][p][0]) ** 2 + (polyline [c][p+1][1] - polyline[c][p][1]) ** 2) # Adding distance to dist this way so it work and keep last value accross curves
+            if dist > (circle_space if type(circle_space) == int else next_circle_space): # if dist > defined distance or generated spacing with acceleration geature if set
                 dist = 0
-                curve.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface))
+                curve.append(circles.circles(round(polyline[c][p][0]), round(polyline[c][p][1]), cs, DoDrawCircle, surface)) # Add the circle to a separate list for potential future uses
                 if type(circle_space) == list:
-                    next_circle_space = next(iter_circle_space, circle_space[c][-1])
-        Circle_list.append(curve)
+                    next_circle_space = next(iter_circle_space, circle_space[c][-1]) # go to the next integer/ float in the list of spacing generated with acceleratino feature
+        Circle_list.append(curve) 
     return Circle_list
 
 
@@ -305,6 +304,12 @@ def AR_prompt():
             return ar
 
 
+#-----------------------------------------------------------------------------#
+#  Potential cleanup neccesary for this function:                             #
+#                                                                             #
+#  - Rewrite the whole function?                                              #                    
+#                                                                             #
+#-----------------------------------------------------------------------------#
 def Write_Map(Circle_list, cs=None, osu_path=None, profile=None, audio=True):
     # Random Osu!StreamGenerator - 180bpm - 4 of 4
     if not osu_path:

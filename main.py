@@ -107,7 +107,8 @@ while running:
                 if Circle_list:
                     intensity = Acceleration_Prompt(Circle_list, circle_space, polyline)
                     if intensity != Circle_list:
-                        screen.fill((33, 33, 33))
+                        screen = screen_init(resolution) # Could probably be considered a workaround
+                        pygame.display.flip()
                         Circle_list = Place_circles(polyline, intensity, cs, surface = screen)
                     pygame.display.update()
             if event.key == pygame.K_w:
